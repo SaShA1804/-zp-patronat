@@ -42,7 +42,23 @@ jobs:
         working-directory: mobile
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
-          yes | buildozer -v android debug
+          set -o pipefail
+          yes | buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Show error tail (on failure)
+        if: failure()
+        working-directory: mobile
+        run: |
+          echo "==================== ОСТАННІ 120 РЯДКІВ ЛОГУ ===================="
+          tail -n 120 build.log || true
+
+      - name: Upload full build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: mobile/build.log
+          if-no-files-found: ignore
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
