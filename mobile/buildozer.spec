@@ -39,6 +39,10 @@ android.allow_backup = True
 # Приймаємо ліцензії SDK автоматично (для CI)
 android.accept_sdk_license = True
 
+# Фіксуємо python-for-android на стабільному релізі (Python 3.11.5),
+# бо master збирає під Python 3.14, несумісний з Kivy 2.3.0 (помилка _PyLong_AsByteArray).
+p4a.branch = v2024.01.21
+
 [buildozer]
 log_level = 2
 warn_on_root = 0
