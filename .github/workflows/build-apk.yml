@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:   # дозволяє запуск вручну з вкладки Actions
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-22.04
@@ -51,6 +54,20 @@ jobs:
         run: |
           echo "==================== ОСТАННІ 120 РЯДКІВ ЛОГУ ===================="
           tail -n 120 build.log || true
+
+      - name: Publish error tail to ci-logs branch (on failure)
+        if: failure()
+        run: |
+          tail -n 400 mobile/build.log > /tmp/error-tail.txt 2>/dev/null || echo "no build.log found" > /tmp/error-tail.txt
+          cd "$RUNNER_TEMP"
+          rm -rf logpush && mkdir logpush && cd logpush
+          git init -q
+          cp /tmp/error-tail.txt error-tail.txt
+          git add error-tail.txt
+          git -c user.name=ci -c user.email=ci@ci commit -q -m "error tail [skip ci]"
+          git branch -M ci-logs
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin ci-logs
 
       - name: Upload full build log
         if: always()
