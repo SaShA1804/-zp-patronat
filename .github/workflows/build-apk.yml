@@ -51,8 +51,9 @@ jobs:
         working-directory: mobile
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
-          set -o pipefail
-          yes | buildozer -v android debug 2>&1 | tee build.log
+          buildozer -v android debug 2>&1 | tee build.log
+          # беремо реальний код виходу buildozer (а не tee), щоб не було хибних падінь
+          exit ${PIPESTATUS[0]}
 
       - name: Show error tail (on failure)
         if: failure()
