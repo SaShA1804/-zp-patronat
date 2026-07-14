@@ -128,8 +128,13 @@ def calc_bonus_segments(base_3, children, calc_year, calc_month):
 
 
 def calc_salary_breakdown(stavka, total_bonus_pct, children, calc_year, calc_month):
-    """Грошове забезпечення — завжди базові 3 ставки (+ надбавка).
-    Пільговий 7-денний термін і зниження до 1 ставки (коли немає дітей) НЕ застосовуються."""
+    """Грошове забезпечення: 3 ставки (+ надбавка), якщо є хоч одна дитина в місяці;
+    якщо дітей немає — не нараховується (0). Пільговий 7-денний термін не застосовується."""
+    has_child = any(child_days_in_month(c["start"], c["end"], calc_year, calc_month) > 0
+                    for c in children)
+    if not has_child:
+        return {"normal": 0.0, "low": 0.0,
+                "note": "немає дітей у місяці — забезпечення не нараховується"}
     normal_full = stavka * 3 * (1 + total_bonus_pct / 100)
     return {"normal": normal_full, "low": 0.0, "note": ""}
 
