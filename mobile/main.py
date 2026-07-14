@@ -128,32 +128,10 @@ def calc_bonus_segments(base_3, children, calc_year, calc_month):
 
 
 def calc_salary_breakdown(stavka, total_bonus_pct, children, calc_year, calc_month):
-    days_in_month = calendar.monthrange(calc_year, calc_month)[1]
-    month_start   = date(calc_year, calc_month, 1)
-    month_end     = date(calc_year, calc_month, days_in_month)
+    """Грошове забезпечення — завжди базові 3 ставки (+ надбавка).
+    Пільговий 7-денний термін і зниження до 1 ставки (коли немає дітей) НЕ застосовуються."""
     normal_full = stavka * 3 * (1 + total_bonus_pct / 100)
-    relevant = [c for c in children if c["start"] <= month_end]
-    if not relevant:
-        return {"normal": 0.0, "low": stavka, "note": "немає дітей — 1 ставка"}
-    has_active = any(c["end"] is None or c["end"] >= month_end for c in relevant)
-    if has_active:
-        return {"normal": normal_full, "low": 0.0, "note": ""}
-    last_dep  = max(c["end"] for c in relevant if c["end"] is not None)
-    grace_end = last_dep + timedelta(days=7)
-    if grace_end < month_start:
-        return {"normal": 0.0, "low": stavka,
-                "note": f"пільговий термін закінчився {grace_end.strftime('%d.%m.%Y')} — 1 ставка"}
-    if grace_end >= month_end:
-        return {"normal": normal_full, "low": 0.0,
-                "note": f"пільговий 7 днів (діє до {grace_end.strftime('%d.%m.%Y')})"}
-    grace_days = (grace_end - month_start).days + 1
-    low_days   = days_in_month - grace_days
-    return {
-        "normal": normal_full * grace_days / days_in_month,
-        "low":    stavka      * low_days   / days_in_month,
-        "note":   (f"пільговий 7 днів по {grace_end.strftime('%d.%m.%Y')} "
-                   f"({grace_days} дн.) + 1 ставка ({low_days} дн.)")
-    }
+    return {"normal": normal_full, "low": 0.0, "note": ""}
 
 
 def build_result(stavka, pm_do6, pm_vid6, children, calc_year, calc_month, month_str):
