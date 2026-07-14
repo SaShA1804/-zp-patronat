@@ -107,13 +107,20 @@ def calc_total_child_days(children, calc_year, calc_month):
 
 
 def calc_bonus_segments(base_3, children, calc_year, calc_month):
+    """Дитина дає +10% за день, якщо: у цей день 3+ дітей, АБО дитині до 1 року,
+    АБО інвалідність. Максимум 10% на одну дитину (умови не додаються)."""
     days_in_month = calendar.monthrange(calc_year, calc_month)[1]
     tally = {}
     for day in range(1, days_in_month + 1):
         d = date(calc_year, calc_month, day)
-        n = sum(1 for c in children
-                if c["start"] <= d and (c["end"] is None or c["end"] >= d))
-        tally[n] = tally.get(n, 0) + 1
+        present = [c for c in children
+                   if c["start"] <= d and (c["end"] is None or c["end"] >= d)]
+        day_count = len(present)
+        qual = sum(1 for c in present
+                   if day_count >= 3
+                   or is_under1(c["birth"], calc_year, calc_month)
+                   or c["invalid"])
+        tally[qual] = tally.get(qual, 0) + 1
     segments = []
     total = 0.0
     for count in sorted(tally.keys(), reverse=True):

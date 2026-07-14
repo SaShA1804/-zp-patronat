@@ -151,26 +151,32 @@ def calc_total_child_days(children: list, calc_year: int, calc_month: int) -> in
 
 def calc_bonus_segments(base_3: float, children: list, calc_year: int, calc_month: int):
     """
-    Надбавка до ЗП рахується ПО ДНЯХ і розбивається на періоди за кількістю дітей.
-    За кожен день місяця +10% за кожну дитину, що була того дня.
+    Надбавка до забезпечення рахується ПО ДНЯХ.
+    Дитина дає +10% за день, якщо виконується БУДЬ-ЯКА з умов:
+      • у цей день 3 і більше дітей;
+      • дитині до 1 року;
+      • у дитини інвалідність.
+    Максимум 10% на одну дитину (умови не додаються).
+    Розбивається на періоди за відсотком надбавки.
 
-    Повертає (список_сегментів, сума_надбавки_грн), де кожен сегмент — dict:
-      count  – кількість дітей у ці дні
+    Повертає (список_сегментів, сума_надбавки_грн), де сегмент — dict:
+      count  – скільки дітей у ці дні дають надбавку
       pct    – відсоток надбавки (count * 10)
-      days   – скільки днів місяця було саме стільки дітей
+      days   – скільки днів місяця було саме стільки таких дітей
       amount – сума надбавки за ці дні (грн)
-
-    Приклад: 17 днів було 4 дитини (+40%) і 13 днів — 3 дитини (+30%) →
-    показуються два окремі рядки з сумами, а не один усереднений.
     """
     days_in_month = calendar.monthrange(calc_year, calc_month)[1]
-    # кількість дітей за кожен день місяця
     tally = {}
     for day in range(1, days_in_month + 1):
         d = date(calc_year, calc_month, day)
-        n = sum(1 for c in children
-                if c["start"] <= d and (c["end"] is None or c["end"] >= d))
-        tally[n] = tally.get(n, 0) + 1
+        present = [c for c in children
+                   if c["start"] <= d and (c["end"] is None or c["end"] >= d)]
+        day_count = len(present)
+        qual = sum(1 for c in present
+                   if day_count >= 3
+                   or is_under1(c["birth"], calc_year, calc_month)
+                   or c["invalid"])
+        tally[qual] = tally.get(qual, 0) + 1
 
     segments = []
     total = 0.0
